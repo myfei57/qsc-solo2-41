@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 from tankfarm.journal.checkpoint import JournalCheckpoint
 from tankfarm.journal.record import Record
@@ -34,6 +35,17 @@ class Repository:
             for item in self._reader.read_lines(self._layout.journal_file())
         )
 
+    def rewrite_records(self, records: Iterable[Record]) -> None:
+        """Rewrites the journal file from the given record set."""
+
+        lines = [
+            json.dumps(record.as_payload(), sort_keys=True, separators=(",", ":"))
+            for record in records
+        ]
+        path = self._layout.journal_file()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+
     def save_checkpoint(self, checkpoint: JournalCheckpoint) -> None:
         self._writer.write_json(self._layout.checkpoint_file(), checkpoint.as_payload())
 
@@ -48,4 +60,3 @@ class Repository:
 
     def load_audit(self) -> tuple[dict[str, Any], ...]:
         return self._reader.read_lines(self._layout.audit_file())
-

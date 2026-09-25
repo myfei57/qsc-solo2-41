@@ -257,11 +257,6 @@ class Services:
         if not records:
             return None
         self.stream.load(records)
-        for record in records:
-            if record.kind == TOMBSTONE_KIND:
-                target = record.payload.get("target_seq")
-                if isinstance(target, int):
-                    self.tombstones.mark(target)
         checkpoint = self.repository.load_checkpoint()
         if checkpoint is None:
             self.projection = self.project(0)

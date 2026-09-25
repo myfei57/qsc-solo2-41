@@ -22,6 +22,10 @@ class JournalWriter:
     def stream(self) -> RecordStream:
         return self._stream
 
+    @property
+    def repository(self) -> Any:
+        return self._repository
+
     def add_observer(self, observer: Callable[[Record], None]) -> None:
         self._observers.append(observer)
 

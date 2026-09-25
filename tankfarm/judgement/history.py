@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from tankfarm.event import topics
-from tankfarm.journal import TOMBSTONE_KIND
 from tankfarm.journal.record import Record
 from tankfarm.sequence.stages import (
     FACT_NEW_TANK_OPEN,
@@ -46,7 +45,6 @@ class StateProjection:
         self.stage = ""
         self.trips = 0
         self.tests = 0
-        self.tombstones: list[int] = []
         self.generations: dict[tuple[str, str], tuple[int, int]] = {}
         self.settings: dict[str, Any] = {}
         self.config_generation = 0
@@ -112,8 +110,6 @@ class StateProjection:
             self.settings = dict(payload["settings"])
             self.config_generation = int(payload["generation"])
             self._note_generation(SCOPE_CONFIG, CONFIG_KEY, payload, record.ts)
-        elif kind == TOMBSTONE_KIND:
-            self.tombstones.append(int(payload["target_seq"]))
         self.applied += 1
 
     def facts(self) -> dict[str, bool]:
@@ -146,7 +142,6 @@ class StateProjection:
             "handoff_phase": self.handoff_phase,
             "trips": self.trips,
             "tests": self.tests,
-            "tombstones": list(self.tombstones),
             "generations": [
                 [scope, key, number, ts]
                 for (scope, key), (number, ts) in self.generations.items()
@@ -212,7 +207,6 @@ class StateProjection:
         projection.stage = str(payload.get("stage", ""))
         projection.trips = int(payload.get("trips", 0))
         projection.tests = int(payload.get("tests", 0))
-        projection.tombstones = [int(item) for item in payload.get("tombstones", [])]
         projection.generations = {
             (str(scope), str(key)): (int(number), int(ts))
             for scope, key, number, ts in payload.get("generations", [])

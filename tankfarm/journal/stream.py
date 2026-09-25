@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any, Iterable, Mapping
 
 from tankfarm.errors import RecordNotFoundError
@@ -31,6 +32,18 @@ class RecordStream:
     def load(self, records: Iterable[Record]) -> None:
         self._records = sorted(records, key=lambda item: item.seq)
 
+    def remove(self, seq: int) -> Record:
+        """Takes a record back out of the stream and closes the gap."""
+
+        if seq < 1 or seq > len(self._records):
+            raise RecordNotFoundError(seq)
+        removed = self._records.pop(seq - 1)
+        self._records = [
+            replace(record, seq=index + 1)
+            for index, record in enumerate(self._records)
+        ]
+        return removed
+
     def get(self, seq: int) -> Record:
         if seq < 1 or seq > len(self._records):
             raise RecordNotFoundError(seq)
@@ -41,4 +54,3 @@ class RecordStream:
 
     def records(self) -> tuple[Record, ...]:
         return tuple(self._records)
-

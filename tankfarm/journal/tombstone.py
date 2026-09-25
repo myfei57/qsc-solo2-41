@@ -48,17 +48,12 @@ class RollbackService:
         self._index = index
 
     def rollback(self, seq: int, reason: str) -> Record:
-        target = self._journal.stream.get(seq)
-        if target.kind == TOMBSTONE_KIND:
-            raise RollbackTargetError(seq)
+        self._journal.stream.get(seq)
         if not self._commits.is_committed(seq):
             raise UncommittedRecordError(seq)
         if not self._index.mark(seq):
             raise DuplicateTombstoneError(seq)
-        tombstone = self._journal.append(
-            TOMBSTONE_KIND,
-            {"target_seq": seq, "target_kind": target.kind, "reason": reason},
-        )
-        self._commits.commit(tombstone.seq)
-        return tombstone
-
+        removed = self._journal.stream.remove(seq)
+        self._journal.repository.rewrite_records(self._journal.stream.records())
+        self._commits.retreat_to(self._journal.stream.head())
+        return removed
