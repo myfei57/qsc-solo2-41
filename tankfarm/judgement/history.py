@@ -43,7 +43,6 @@ class StateProjection:
         self.pressures: dict[str, float] = {}
         self.batches: dict[str, tuple[str, int]] = {}
         self.handoff_phase = ""
-        self.stage = ""
         self.trips = 0
         self.tests = 0
         self.tombstones: list[int] = []
@@ -101,8 +100,6 @@ class StateProjection:
             self.inert_alarm[str(payload["tank_id"])] = bool(payload["alarm"])
         elif kind == topics.INERT_PRESSURE:
             self.pressures[str(payload["tank_id"])] = float(payload["pressure"])
-        elif kind == topics.SEQUENCE_STAGE:
-            self.stage = str(payload["stage"])
         elif kind == topics.BATCH_REGISTERED:
             self.batches[str(payload["batch_id"])] = (
                 str(payload["tank_id"]),
@@ -142,7 +139,6 @@ class StateProjection:
             "inert_alarm": dict(self.inert_alarm),
             "pressures": dict(self.pressures),
             "batches": {key: list(value) for key, value in self.batches.items()},
-            "stage": self.stage,
             "handoff_phase": self.handoff_phase,
             "trips": self.trips,
             "tests": self.tests,
@@ -209,7 +205,6 @@ class StateProjection:
             for key, value in payload.get("batches", {}).items()
         }
         projection.handoff_phase = str(payload.get("handoff_phase", ""))
-        projection.stage = str(payload.get("stage", ""))
         projection.trips = int(payload.get("trips", 0))
         projection.tests = int(payload.get("tests", 0))
         projection.tombstones = [int(item) for item in payload.get("tombstones", [])]

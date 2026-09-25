@@ -333,9 +333,8 @@ class Services:
 
     def start_pump(self, pump_id: str, sheet_id: str) -> dict[str, object]:
         pump = self.pumps.get(pump_id)
-        self.machine.check(STAGE_PUMP_RUNNING)
+        self.machine.backfill(STAGE_PUMP_RUNNING)
         sheet, report = self.gate.verify(sheet_id, PROCESS_TANK)
-        self.machine.advance(STAGE_PUMP_RUNNING)
         start_pump(pump, self.journal, self.bus, self.clock)
         self.commit()
         return {
@@ -375,19 +374,13 @@ class Services:
     def change_tank(self) -> dict[str, str]:
         if self.machine.stage() == STAGE_OLD_TANK_CLOSED:
             raise StageAlreadyReachedError(STAGE_OLD_TANK_CLOSED)
-        self.machine.check(STAGE_NEW_TANK_OPEN)
-        self.machine.advance(STAGE_NEW_TANK_OPEN)
+        self.machine.backfill(STAGE_OLD_TANK_CLOSED)
         self.handoff.open_new(SOURCE_TANK)
-        self.machine.set_fact(FACT_NEW_TANK_OPEN, True)
-        self.machine.advance(STAGE_OLD_TANK_CLOSED)
         self.handoff.close_old(SOURCE_TANK, DESTINATION_TANK)
-        self.machine.set_fact(FACT_OLD_TANK_CLOSED, True)
         self.commit()
         return {"new_tank_id": SOURCE_TANK, "old_tank_id": DESTINATION_TANK}
 
     def retry_change_tank(self) -> dict[str, object]:
-        if self.machine.stage() not in (STAGE_NEW_TANK_OPEN, STAGE_OLD_TANK_CLOSED):
-            raise GateBlockedError(FACT_NEW_TANK_OPEN)
         steps = self.handoff.retry(SOURCE_TANK, DESTINATION_TANK)
         self.commit()
         return {"steps": list(steps)}
@@ -650,7 +643,6 @@ class Services:
         for name, active in self.projection.latches.items():
             self.engine.restore(name, active, self.projection.latch_reason.get(name, ""))
         self.batches.restore(dict(self.projection.batches))
-        self.machine.restore(self.projection.stage)
 
 
 def build_services(
