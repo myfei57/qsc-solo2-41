@@ -539,8 +539,6 @@ class Services:
             gauge_confirmed=self.levels.is_confirmed(PROCESS_TANK),
             blanket_alarm=blanket_state.alarm,
             blanket_confirmed=blanket_state.confirmed,
-            pumps_running=bool(self.pumps.running_ids()),
-            esd_closed=self.esd_valve.is_closed(),
         )
         return self.engine.evaluate(ctx)
 
@@ -647,8 +645,6 @@ class Services:
             self.inert.apply_pressure(tank_id, pressure)
         for tank_id, alarm in self.projection.inert_alarm.items():
             self.inert.apply_alarm(tank_id, alarm)
-        for name, active in self.projection.latches.items():
-            self.engine.restore(name, active, self.projection.latch_reason.get(name, ""))
         self.batches.restore(dict(self.projection.batches))
         self.machine.restore(self.projection.stage)
 

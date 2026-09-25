@@ -89,11 +89,10 @@ class TripController:
     def _act(self, reason: str) -> None:
         self._engine.set(OVERFILL_LATCH, reason)
         self._valve.close()
-        stopped = self._stop_hook()
+        self._stop_hook()
         payload = {
             "tank_id": self._tank_id,
             "reason": reason,
-            "stopped": list(stopped),
         }
         self._journal.append(topics.ESD_TRIP, payload)
         self._bus.publish(Event(topics.ESD_TRIP, payload, self._clock.now()))

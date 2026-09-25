@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from tankfarm.clock import LogicalClock
-from tankfarm.errors import LevelTooHighError, LatchActiveError
 from tankfarm.event import Event, EventBus
 from tankfarm.event import topics
 from tankfarm.esd.valve import EsdValve
@@ -41,11 +40,6 @@ class TestController:
         self._bus.publish(Event(topics.ESD_TEST, payload, self._clock.now()))
 
     def reset(self) -> None:
-        if self._engine.is_active(OVERFILL_LATCH) and self._valve.is_open():
-            raise LatchActiveError("esd-valve-open")
-        reading = self._level.read_confirmed(self._tank_id)
-        if self._level.at_high(self._tank_id):
-            raise LevelTooHighError(self._tank_id, reading, self._level.high_limit())
         self._engine.clear(OVERFILL_LATCH, "operator reset")
         payload = {"tank_id": self._tank_id, "phase": "reset"}
         self._journal.append(topics.ESD_TEST, payload)

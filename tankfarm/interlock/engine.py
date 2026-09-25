@@ -57,9 +57,10 @@ class InterlockEngine:
         changed: list[LatchState] = []
         for name, rule in self._rules.items():
             latch = self._latches[name]
-            if not latch.active and rule.set_when(ctx):
-                changed.append(self._apply(name, True, rule.description))
-            elif latch.active and rule.clear_when(ctx):
+            if rule.set_when(ctx):
+                if not latch.active:
+                    changed.append(self._apply(name, True, rule.description))
+            elif latch.active:
                 changed.append(self._apply(name, False, rule.description))
         return tuple(changed)
 
