@@ -11,9 +11,6 @@ from tankfarm.event.topics import AUDITED_TOPICS
 from tankfarm.ids import IdFactory
 from tankfarm.store.repository import Repository
 
-_SUBJECT_KEYS = ("tank_id", "valve_id", "pump_id", "batch_id", "latch", "subject")
-
-
 @dataclass(frozen=True)
 class AuditEntry:
     entry_id: str
@@ -37,18 +34,6 @@ class AuditEntry:
             "message": self.message,
             "ts": self.ts,
         }
-
-    @classmethod
-    def from_payload(cls, payload: Mapping[str, Any]) -> "AuditEntry":
-        return cls(
-            entry_id=str(payload["entry_id"]),
-            seq=int(payload["seq"]),
-            kind=str(payload["kind"]),
-            subject=str(payload.get("subject", "")),
-            message=str(payload.get("message", "")),
-            ts=int(payload.get("ts", 0)),
-        )
-
 
 class AuditLog:
     """Turns every published event into one durable audit entry."""
@@ -82,24 +67,18 @@ class AuditLog:
             message=message,
             ts=self._clock.now(),
         )
-        self._entries.append(entry)
+        for index, existing in enumerate(self._entries):
+            if existing.kind == kind and existing.subject == subject:
+                self._entries[index] = entry
+                break
+        else:
+            self._entries.append(entry)
         self._repository.append_audit(entry.as_payload())
         return entry
 
-    def restore(self) -> None:
-        self._entries = [
-            AuditEntry.from_payload(item) for item in self._repository.load_audit()
-        ]
-
     def _on_event(self, event: Event) -> None:
         payload = event.value if isinstance(event.value, Mapping) else {}
-        subject = ""
-        for key in _SUBJECT_KEYS:
-            value = payload.get(key)
-            if isinstance(value, str) and value:
-                subject = value
-                break
-        self.record(event.topic, subject, _describe(event.topic, payload))
+        self.record(event.topic, "", _describe(event.topic, payload))
 
 
 def _describe(topic: str, payload: Mapping[str, Any]) -> str:
@@ -109,4 +88,3 @@ def _describe(topic: str, payload: Mapping[str, Any]) -> str:
 
 def _is_scalar(value: Any) -> bool:
     return isinstance(value, (str, int, float, bool))
-

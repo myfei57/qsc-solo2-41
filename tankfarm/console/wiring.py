@@ -266,7 +266,6 @@ class Services:
         if checkpoint is None:
             self.projection = self.project(0)
             self._apply_projection()
-            self.auditor.restore()
             return None
         self.projection = StateProjection.from_snapshot(checkpoint.state)
         self.watermark.advance_to(checkpoint.watermark)
@@ -278,7 +277,6 @@ class Services:
             self.projection.apply,
         )
         self._apply_projection()
-        self.auditor.restore()
         self.last_replay = result
         return result
 
