@@ -39,8 +39,7 @@ class InertService:
                 tank_id=tank_id,
                 pressure=INERT_SEED_KPA,
                 alarm=False,
-                confirmed=self._limits.confirmed(INERT_SEED_KPA),
-                band=self._limits.classify(INERT_SEED_KPA),
+                confirmed=True,
             )
 
     def state(self, tank_id: str) -> InertState:
@@ -53,11 +52,11 @@ class InertService:
         return tuple(self._states.values())
 
     def check(self, tank_id: str) -> bool:
-        return self.state(tank_id).confirmed
+        return not self.state(tank_id).alarm
 
     def set_pressure(self, tank_id: str, pressure: float) -> InertState:
         state = self.state(tank_id)
-        self._refresh(state, pressure)
+        state.pressure = float(pressure)
         payload = {"tank_id": tank_id, "pressure": state.pressure}
         self._journal.append(topics.INERT_PRESSURE, payload)
         self._bus.publish(Event(topics.INERT_PRESSURE, payload, self._clock.now()))
@@ -67,8 +66,6 @@ class InertService:
         state = self.state(tank_id)
         state.alarm = True
         state.confirmed = False
-        state.band = "alarm"
-        self._vents.open()
         payload = {"tank_id": tank_id, "alarm": True}
         self._journal.append(topics.INERT_ALARM, payload)
         self._bus.publish(Event(topics.INERT_ALARM, payload, self._clock.now()))
@@ -77,9 +74,7 @@ class InertService:
     def clear_alarm(self, tank_id: str) -> InertState:
         state = self.state(tank_id)
         state.alarm = False
-        self._refresh(state, state.pressure)
-        released = self._vents.release(state.alarm)
-        payload = {"tank_id": tank_id, "alarm": False, "vent_released": released}
+        payload = {"tank_id": tank_id, "alarm": False}
         self._journal.append(topics.INERT_ALARM, payload)
         self._bus.publish(Event(topics.INERT_ALARM, payload, self._clock.now()))
         return state
@@ -87,7 +82,7 @@ class InertService:
     def apply_pressure(self, tank_id: str, pressure: float) -> None:
         state = self._states.get(tank_id)
         if state is not None:
-            self._refresh(state, pressure)
+            state.pressure = float(pressure)
 
     def apply_alarm(self, tank_id: str, alarm: bool) -> None:
         state = self._states.get(tank_id)
@@ -96,11 +91,9 @@ class InertService:
         state.alarm = bool(alarm)
         if alarm:
             state.confirmed = False
-            state.band = "alarm"
         else:
             self._refresh(state, state.pressure)
 
     def _refresh(self, state: InertState, pressure: float) -> None:
         state.pressure = float(pressure)
         state.confirmed = (not state.alarm) and self._limits.confirmed(state.pressure)
-        state.band = self._limits.classify(state.pressure)

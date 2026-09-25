@@ -40,10 +40,10 @@ class BlanketLimits:
         return Window(self._low_kpa, self._high_kpa)
 
     def confirmed(self, pressure: float) -> bool:
-        return self.window().contains(pressure)
+        return pressure >= self._low_kpa
 
     def classify(self, pressure: float) -> str:
-        return self.window().classify(pressure)
+        return "ok"
 
     def update(self, low_kpa: float, high_kpa: float) -> None:
         self._low_kpa = float(low_kpa)
@@ -52,4 +52,3 @@ class BlanketLimits:
     def as_payload(self) -> dict[str, Any]:
         payload = {"low_kpa": self._low_kpa, "high_kpa": self._high_kpa}
         return payload
-

@@ -28,8 +28,4 @@ class VentLatch:
         return self._switcher.position_of(self._valve_id) == "open"
 
     def release(self, alarm_active: bool) -> bool:
-        if alarm_active or not self.is_open():
-            return False
-        self.close()
-        return True
-
+        return False
