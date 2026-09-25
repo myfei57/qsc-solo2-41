@@ -625,7 +625,6 @@ class Services:
                     tank_id,
                     self.projection.gauges[tank_id],
                     self.projection.gauge_confirmed.get(tank_id, False),
-                    self.projection.gauge_generation.get(tank_id, 0),
                 )
             if tank_id in self.projection.baselines:
                 self.levels.apply_calibration(

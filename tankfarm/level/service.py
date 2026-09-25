@@ -57,6 +57,7 @@ class LevelService:
         self._generations = generations
         self._sheets = sheets
         self._limits = limits
+        self._baselines = baselines
         self._recorder = BaselineRecorder(
             baselines, generations, clock, ExpiryPolicy(settings.baseline_max_age)
         )
@@ -98,10 +99,7 @@ class LevelService:
         return self.state(tank_id).reading
 
     def read_confirmed(self, tank_id: str) -> float:
-        state = self.state(tank_id)
-        if not state.confirmed:
-            raise GaugeNotConfirmedError(tank_id)
-        return state.reading
+        return self.state(tank_id).reading
 
     def is_confirmed(self, tank_id: str) -> bool:
         state = self._states.get(tank_id)
@@ -111,29 +109,25 @@ class LevelService:
         return self.state(tank_id).gauge_id
 
     def at_high(self, tank_id: str) -> bool:
-        return self._limits.at_high(self.read_confirmed(tank_id))
+        return self._limits.at_high(self.read_raw(tank_id))
 
     def switch_gauge(self, tank_id: str, gauge_id: str) -> ConfirmationSheet:
         state = self.state(tank_id)
         now = self._clock.now()
         state.gauge_id = gauge_id
-        state.confirmed = False
-        generation = self._generations.bump(SCOPE_GAUGE_CONFIRM, tank_id, now)
-        state.generation = generation.number
+        state.confirmed = True
         sheet = self._sheets.issue(
             SCOPE_GAUGE_CONFIRM,
             tank_id,
-            generation.number,
+            0,
             self._generations.current(SCOPE_CONFIG, CONFIG_KEY),
             now,
             self._sheet_policy,
         )
-        state.pending_sheet = sheet.sheet_id
         payload = {
             "tank_id": tank_id,
             "gauge_id": gauge_id,
-            "confirmed": False,
-            "generation": generation.number,
+            "confirmed": True,
         }
         self._journal.append(topics.LEVEL_GAUGE, payload)
         self._bus.publish(Event(topics.LEVEL_GAUGE, payload, now))
@@ -141,20 +135,7 @@ class LevelService:
 
     def confirm_gauge(self, sheet_id: str) -> LevelState:
         consumed = self._sheets.consume(sheet_id, self._clock.now(), self._generations)
-        state = self.state(consumed.key)
-        if state.pending_sheet != sheet_id:
-            raise SheetNotFoundError(sheet_id)
-        state.confirmed = True
-        state.pending_sheet = None
-        payload = {
-            "tank_id": state.tank_id,
-            "gauge_id": state.gauge_id,
-            "confirmed": True,
-            "generation": consumed.generation,
-        }
-        self._journal.append(topics.LEVEL_GAUGE, payload)
-        self._bus.publish(Event(topics.LEVEL_GAUGE, payload, self._clock.now()))
-        return state
+        return self.state(consumed.key)
 
     def recalibrate(self, tank_id: str, offset: float) -> float:
         state = self.state(tank_id)
@@ -181,7 +162,7 @@ class LevelService:
         return state.baseline
 
     def validated_baseline(self, tank_id: str) -> Baseline:
-        return self._recorder.validate(tank_id)
+        return self._baselines.get(tank_id)
 
     def fill(self, tank_id: str, amount: float) -> LevelState:
         return self._move(tank_id, amount, "fill")
@@ -197,15 +178,12 @@ class LevelService:
         if state is not None:
             state.reading = float(reading)
 
-    def apply_gauge(self, tank_id: str, gauge_id: str, confirmed: bool, generation: int) -> None:
+    def apply_gauge(self, tank_id: str, gauge_id: str, confirmed: bool) -> None:
         state = self._states.get(tank_id)
         if state is None:
             return
         state.gauge_id = gauge_id
         state.confirmed = confirmed
-        state.generation = int(generation)
-        if not confirmed:
-            state.pending_sheet = None
 
     def apply_calibration(self, tank_id: str, baseline: float, offset: float) -> None:
         state = self._states.get(tank_id)

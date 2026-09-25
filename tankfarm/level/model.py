@@ -16,8 +16,6 @@ class LevelState:
     baseline: float
     offset: float
     confirmed: bool
-    generation: int = 0
-    pending_sheet: str | None = None
 
     def as_payload(self) -> dict[str, Any]:
         return {
@@ -27,7 +25,4 @@ class LevelState:
             "baseline": self.baseline,
             "offset": self.offset,
             "confirmed": self.confirmed,
-            "generation": self.generation,
-            "pending_sheet": self.pending_sheet,
         }
-

@@ -43,11 +43,10 @@ class BaselineRecorder:
 
     def record(self, tank_id: str, baseline: float, offset: float) -> Baseline:
         now = self._clock.now()
-        generation = self._generations.bump(SCOPE_BASELINE, tank_id, now)
         return self._baselines.record(
             tank_id=tank_id,
             value=baseline,
-            generation=generation.number,
+            generation=0,
             config_generation=self._generations.current(SCOPE_CONFIG, CONFIG_KEY),
             now=now,
             policy=self._policy,
@@ -60,4 +59,3 @@ class BaselineRecorder:
             )
         except BaselineNotFoundError:
             raise
-
