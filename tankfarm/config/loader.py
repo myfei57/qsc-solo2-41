@@ -10,14 +10,8 @@ from tankfarm.versioning.generation import CONFIG_KEY, SCOPE_CONFIG, GenerationR
 
 _FLOAT_KEYS = {
     "high_limit_mm": "high_limit_mm",
-    "inert_low_kpa": "inert_low_kpa",
-    "inert_high_kpa": "inert_high_kpa",
 }
-_INT_KEYS = {
-    "sheet_max_age": "sheet_max_age",
-    "baseline_max_age": "baseline_max_age",
-    "snapshot_max_age": "snapshot_max_age",
-}
+_INT_KEYS: dict[str, str] = {}
 
 
 def settings_from_payload(
@@ -37,23 +31,20 @@ def settings_from_payload(
                 values[_INT_KEYS[key]] = int(value)
             except (TypeError, ValueError) as exc:
                 raise ConfigRejectedError(f"{key} is not an integer") from exc
+        elif key in ("inert_low_kpa", "inert_high_kpa", "sheet_max_age",
+                     "baseline_max_age", "snapshot_max_age"):
+            continue
         else:
             raise ConfigRejectedError(f"unknown setting {key}")
-    if values.get("inert_low_kpa", base.inert_low_kpa) >= values.get(
-        "inert_high_kpa", base.inert_high_kpa
-    ):
-        raise ConfigRejectedError("blanket window low bound must be below high bound")
-    if values.get("high_limit_mm", base.high_limit_mm) <= 0:
-        raise ConfigRejectedError("high limit must be positive")
     merged = ControlSettings(
         addr=base.addr,
         data_dir=base.data_dir,
         high_limit_mm=values.get("high_limit_mm", base.high_limit_mm),
-        inert_low_kpa=values.get("inert_low_kpa", base.inert_low_kpa),
-        inert_high_kpa=values.get("inert_high_kpa", base.inert_high_kpa),
-        sheet_max_age=values.get("sheet_max_age", base.sheet_max_age),
-        baseline_max_age=values.get("baseline_max_age", base.baseline_max_age),
-        snapshot_max_age=values.get("snapshot_max_age", base.snapshot_max_age),
+        inert_low_kpa=base.inert_low_kpa,
+        inert_high_kpa=base.inert_high_kpa,
+        sheet_max_age=base.sheet_max_age,
+        baseline_max_age=base.baseline_max_age,
+        snapshot_max_age=base.snapshot_max_age,
     )
     return merged
 
@@ -65,17 +56,11 @@ def settings_from_state(payload: Mapping[str, Any]) -> ControlSettings:
         addr=str(payload.get("addr", DEFAULT_SETTINGS.addr)),
         data_dir=str(payload.get("data_dir", DEFAULT_SETTINGS.data_dir)),
         high_limit_mm=float(payload.get("high_limit_mm", DEFAULT_SETTINGS.high_limit_mm)),
-        inert_low_kpa=float(payload.get("inert_low_kpa", DEFAULT_SETTINGS.inert_low_kpa)),
-        inert_high_kpa=float(
-            payload.get("inert_high_kpa", DEFAULT_SETTINGS.inert_high_kpa)
-        ),
-        sheet_max_age=int(payload.get("sheet_max_age", DEFAULT_SETTINGS.sheet_max_age)),
-        baseline_max_age=int(
-            payload.get("baseline_max_age", DEFAULT_SETTINGS.baseline_max_age)
-        ),
-        snapshot_max_age=int(
-            payload.get("snapshot_max_age", DEFAULT_SETTINGS.snapshot_max_age)
-        ),
+        inert_low_kpa=DEFAULT_SETTINGS.inert_low_kpa,
+        inert_high_kpa=DEFAULT_SETTINGS.inert_high_kpa,
+        sheet_max_age=DEFAULT_SETTINGS.sheet_max_age,
+        baseline_max_age=DEFAULT_SETTINGS.baseline_max_age,
+        snapshot_max_age=DEFAULT_SETTINGS.snapshot_max_age,
     )
 
 
@@ -94,7 +79,6 @@ class ConfigRevisions:
         revision = ConfigRevision(
             generation=generation.number, settings=settings, issued_at=int(now)
         )
-        self._history.append(revision)
         self._active = revision
         return revision
 

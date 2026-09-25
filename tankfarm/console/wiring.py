@@ -492,14 +492,9 @@ class Services:
         ).with_addr(self._base_settings.addr).with_data_dir(self._base_settings.data_dir)
         revision = self.revisions.activate(settings, self.clock.tick())
         self.settings = settings
-        self.limits.update(settings.high_limit_mm)
-        self.blanket.update(settings.inert_low_kpa, settings.inert_high_kpa)
         self.journal.append(
             topics.CONFIG_REVISED,
-            {
-                "generation": revision.generation,
-                "settings": settings.as_payload(),
-            },
+            {"generation": revision.generation},
         )
         self.commit()
         return revision.as_payload()
