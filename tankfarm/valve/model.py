@@ -16,7 +16,6 @@ class Valve:
     name: str
     position: str = POSITION_CLOSED
     persisted: bool = False
-    updated_at: int = 0
 
     def is_open(self) -> bool:
         return self.position == POSITION_OPEN
@@ -26,12 +25,9 @@ class Valve:
 
     def move_to(self, position: str, ts: int) -> None:
         self.position = position
-        self.persisted = False
-        self.updated_at = int(ts)
 
     def mark_persisted(self, ts: int) -> None:
         self.persisted = True
-        self.updated_at = int(ts)
 
     def as_payload(self) -> dict[str, Any]:
         return {

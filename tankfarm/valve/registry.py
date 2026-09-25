@@ -54,9 +54,4 @@ class ValveRegistry:
             valve.updated_at = 0
 
     def apply_positions(self, positions: dict[str, str], persisted_at: dict[str, int]) -> None:
-        for valve_id, position in positions.items():
-            valve = self._valves.get(valve_id)
-            if valve is None:
-                continue
-            valve.position = position
-            valve.updated_at = persisted_at.get(valve_id, valve.updated_at)
+        return

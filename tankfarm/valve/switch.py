@@ -38,10 +38,6 @@ class ValveSwitcher:
     def _move(self, valve_id: str, position: str) -> Valve:
         valve = self._registry.get(valve_id)
         valve.move_to(position, self._clock.tick())
-        self._journal.append(
-            topics.VALVE_POSITION,
-            {"valve_id": valve.valve_id, "position": valve.position},
-        )
         self._bus.publish(
             Event(
                 topic=topics.VALVE_POSITION,
@@ -50,4 +46,3 @@ class ValveSwitcher:
             )
         )
         return valve
-

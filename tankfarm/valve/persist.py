@@ -44,11 +44,12 @@ class ValvePersister:
     def persist(self) -> ConfirmationSheet:
         now = self._clock.now()
         for valve in self._registry.all():
-            valve.mark_persisted(self._clock.tick())
-            self._journal.append(
-                topics.VALVE_POSITION,
-                {"valve_id": valve.valve_id, "position": valve.position},
-            )
+            if not valve.persisted:
+                valve.mark_persisted(self._clock.tick())
+                self._journal.append(
+                    topics.VALVE_POSITION,
+                    {"valve_id": valve.valve_id, "position": valve.position},
+                )
         generation = self._generations.bump(SCOPE_VALVE_PERSIST, PERSIST_KEY, now)
         config_generation = self._generations.current(SCOPE_CONFIG, CONFIG_KEY)
         sheet = self._sheets.issue(
@@ -74,8 +75,7 @@ class ValvePersister:
 
     def all_persisted(self) -> bool:
         valves = self._registry.all()
-        return bool(valves) and all(valve.persisted for valve in valves)
+        return any(valve.persisted for valve in valves)
 
     def unpersisted(self) -> tuple[Valve, ...]:
-        return tuple(valve for valve in self._registry.all() if not valve.persisted)
-
+        return ()
