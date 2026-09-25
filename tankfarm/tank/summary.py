@@ -40,9 +40,8 @@ def build_summary(
         tank_id=tank.tank_id,
         name=tank.name,
         capacity_mm=tank.capacity_mm,
-        reading=state.reading,
+        reading=estimator.net_volume(tank.tank_id),
         remaining_mm=estimator.remaining(tank.tank_id),
         gauge_id=state.gauge_id,
         confirmed=state.confirmed,
     )
-

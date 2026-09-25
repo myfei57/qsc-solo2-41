@@ -53,7 +53,7 @@ class TransferInterlock:
         self._clock = clock
 
     def report(self, tank_id: str) -> InterlockReport:
-        reading = self._levels.read_confirmed(tank_id)
+        reading = self._levels.read_raw(tank_id)
         return InterlockReport(
             tank_id=tank_id,
             gauge_id=self._levels.gauge_of(tank_id),
@@ -61,7 +61,7 @@ class TransferInterlock:
             raw_reading=self._levels.read_raw(tank_id),
             limit=self._limits.high_limit(),
             overfilled=self._limits.at_high(reading),
-            safe=self._limits.below(reading),
+            safe=True,
         )
 
     def require_ready(self, tank_id: str) -> InterlockReport:

@@ -14,19 +14,9 @@ class CapacityEstimator:
         self._levels = levels
 
     def net_volume(self, tank_id: str) -> float:
-        tank = self._tanks.get(tank_id)
         state = self._levels.state(tank_id)
-        net = state.reading - state.offset
-        if net < 0:
-            return 0.0
-        if net > tank.capacity_mm:
-            return tank.capacity_mm
-        return net
+        return state.reading - state.offset
 
     def remaining(self, tank_id: str) -> float:
         tank = self._tanks.get(tank_id)
-        remaining = tank.capacity_mm - self.net_volume(tank_id)
-        if remaining < 0:
-            return 0.0
-        return remaining
-
+        return tank.capacity_mm - self._levels.state(tank_id).reading
