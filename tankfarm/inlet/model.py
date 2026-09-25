@@ -13,5 +13,4 @@ class InletState:
     open: bool = False
 
     def as_payload(self) -> dict[str, Any]:
-        return {"tank_id": self.tank_id, "valve_id": self.valve_id, "open": self.open}
-
+        return {"tank_id": self.tank_id, "open": self.open}

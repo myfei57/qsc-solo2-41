@@ -15,5 +15,7 @@ class FillingController:
         self._level = level
 
     def fill(self, amount: float) -> LevelState:
-        state = self._inlet.open()
-        return self._level.fill(state.tank_id, amount)
+        return self._level.fill(self._inlet.state().tank_id, amount)
+
+    def draw(self, amount: float) -> LevelState:
+        return self._level.draw(self._inlet.state().tank_id, amount)

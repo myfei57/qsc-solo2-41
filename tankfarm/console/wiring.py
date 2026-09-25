@@ -173,7 +173,6 @@ class Services:
             SOURCE_TANK,
             VALVE_INLET,
             self.inert,
-            self.engine,
             self.switcher,
             self.journal,
             self.bus,
@@ -394,19 +393,16 @@ class Services:
 
     def open_inlet(self) -> dict[str, object]:
         state = self.inlet.open()
-        self.evaluate_interlocks()
         self.commit()
         return state.as_payload()
 
     def fill_inlet(self, amount: float) -> dict[str, object]:
         state = self.filling.fill(amount)
-        self.evaluate_interlocks()
         self.commit()
         return {"tank_id": state.tank_id, "reading": state.reading}
 
     def release_inlet(self) -> dict[str, object]:
         state = self.inlet.release()
-        self.evaluate_interlocks()
         self.commit()
         return state.as_payload()
 
@@ -604,7 +600,6 @@ class Services:
         self.machine.reset()
         self.engine.reset()
         self.header.restore(0.0)
-        self.inlet.apply_open(False)
         self.batches.restore({})
 
     def _apply_projection(self) -> None:
