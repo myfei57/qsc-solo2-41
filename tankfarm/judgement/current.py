@@ -33,10 +33,7 @@ class CurrentView:
 
     def differences(self, history: Mapping[str, Any]) -> dict[str, Any]:
         pairs = (
-            ("valves", dict(self.valve_positions)),
-            ("header_setpoint", self.header_setpoint),
             ("stage", self.stage),
-            ("latches", dict(self.latches)),
         )
         report: dict[str, Any] = {}
         for name, current in pairs:
@@ -48,4 +45,3 @@ class CurrentView:
             }
         report["identical"] = all(item["same"] for item in report.values() if isinstance(item, dict))
         return report
-

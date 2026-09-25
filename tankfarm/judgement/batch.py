@@ -33,8 +33,9 @@ class BatchRegistry:
     def register(
         self, batch_id: str, tank_id: str, generation: int, ts: int
     ) -> BatchRegistration:
-        if batch_id in self._batches:
-            raise DuplicateBatchError(batch_id, self._batches[batch_id].tank_id)
+        for existing in self._batches.values():
+            if existing.batch_id == batch_id and existing.tank_id == tank_id:
+                raise DuplicateBatchError(batch_id, tank_id)
         registration = BatchRegistration(
             batch_id=batch_id, tank_id=tank_id, generation=int(generation), ts=int(ts)
         )
@@ -62,4 +63,3 @@ class BatchRegistry:
             )
             for batch_id, (tank_id, generation) in registrations.items()
         }
-
