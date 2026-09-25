@@ -11,9 +11,7 @@ from tankfarm.errors import (
 )
 from tankfarm.versioning.expiry import ExpiryPolicy
 from tankfarm.versioning.generation import (
-    CONFIG_KEY,
     SCOPE_BASELINE,
-    SCOPE_CONFIG,
     GenerationRegistry,
 )
 
@@ -25,7 +23,6 @@ class Baseline:
     tank_id: str
     value: float
     generation: int
-    config_generation: int
     issued_at: int
     policy: ExpiryPolicy
 
@@ -34,7 +31,6 @@ class Baseline:
             "tank_id": self.tank_id,
             "value": self.value,
             "generation": self.generation,
-            "config_generation": self.config_generation,
             "issued_at": self.issued_at,
         }
 
@@ -50,7 +46,6 @@ class BaselineBook:
         tank_id: str,
         value: float,
         generation: int,
-        config_generation: int,
         now: int,
         policy: ExpiryPolicy,
     ) -> Baseline:
@@ -58,7 +53,6 @@ class BaselineBook:
             tank_id=tank_id,
             value=float(value),
             generation=int(generation),
-            config_generation=int(config_generation),
             issued_at=int(now),
             policy=policy,
         )
@@ -75,7 +69,6 @@ class BaselineBook:
         self, tank_id: str, now: int, registry: GenerationRegistry
     ) -> Baseline:
         baseline = self.get(tank_id)
-        registry.require(SCOPE_CONFIG, CONFIG_KEY, baseline.config_generation)
         registry.require(SCOPE_BASELINE, tank_id, baseline.generation)
         if baseline.policy.expired(baseline.issued_at, now):
             raise ExpiredBaselineError(

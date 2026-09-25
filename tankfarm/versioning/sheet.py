@@ -8,7 +8,7 @@ from typing import Any
 from tankfarm.errors import DuplicateSheetError, ExpiredSheetError, SheetNotFoundError
 from tankfarm.ids import IdFactory
 from tankfarm.versioning.expiry import ExpiryPolicy
-from tankfarm.versioning.generation import CONFIG_KEY, SCOPE_CONFIG, GenerationRegistry
+from tankfarm.versioning.generation import GenerationRegistry
 
 STATE_OPEN = "open"
 STATE_CONSUMED = "consumed"
@@ -23,7 +23,6 @@ class ConfirmationSheet:
     scope: str
     key: str
     generation: int
-    config_generation: int
     issued_at: int
     policy: ExpiryPolicy
     state: str = STATE_OPEN
@@ -35,7 +34,6 @@ class ConfirmationSheet:
             "scope": self.scope,
             "key": self.key,
             "generation": self.generation,
-            "config_generation": self.config_generation,
             "issued_at": self.issued_at,
             "state": self.state,
             "consumed_at": self.consumed_at,
@@ -54,7 +52,6 @@ class SheetBook:
         scope: str,
         key: str,
         generation: int,
-        config_generation: int,
         now: int,
         policy: ExpiryPolicy,
     ) -> ConfirmationSheet:
@@ -63,7 +60,6 @@ class SheetBook:
             scope=scope,
             key=key,
             generation=int(generation),
-            config_generation=int(config_generation),
             issued_at=int(now),
             policy=policy,
         )
@@ -82,7 +78,6 @@ class SheetBook:
         sheet = self.get(sheet_id)
         if sheet.state != STATE_OPEN:
             raise DuplicateSheetError(sheet_id)
-        registry.require(SCOPE_CONFIG, CONFIG_KEY, sheet.config_generation)
         registry.require(sheet.scope, sheet.key, sheet.generation)
         if sheet.policy.expired(sheet.issued_at, now):
             sheet.state = STATE_EXPIRED

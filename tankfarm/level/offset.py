@@ -9,9 +9,7 @@ from tankfarm.errors import (
 from tankfarm.versioning.baseline import Baseline, BaselineBook
 from tankfarm.versioning.expiry import ExpiryPolicy
 from tankfarm.versioning.generation import (
-    CONFIG_KEY,
     SCOPE_BASELINE,
-    SCOPE_CONFIG,
     GenerationRegistry,
 )
 
@@ -36,7 +34,6 @@ class BaselineRecorder:
             tank_id=tank_id,
             value=baseline,
             generation=0,
-            config_generation=self._generations.current(SCOPE_CONFIG, CONFIG_KEY),
             now=self._clock.now(),
             policy=self._policy,
         )
@@ -48,7 +45,6 @@ class BaselineRecorder:
             tank_id=tank_id,
             value=baseline,
             generation=generation.number,
-            config_generation=self._generations.current(SCOPE_CONFIG, CONFIG_KEY),
             now=now,
             policy=self._policy,
         )
@@ -60,4 +56,3 @@ class BaselineRecorder:
             )
         except BaselineNotFoundError:
             raise
-

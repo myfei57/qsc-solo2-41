@@ -299,7 +299,6 @@ class Services:
             scope=SCOPE_SNAPSHOT,
             key=SNAPSHOT_KEY,
             generation=generation.number,
-            config_generation=self.revisions.active().generation,
             now=self.clock.now(),
             policy=ExpiryPolicy(self.settings.snapshot_max_age),
         )
@@ -637,7 +636,6 @@ class Services:
                     tank_id=tank_id,
                     value=self.projection.baselines[tank_id],
                     generation=self.projection.baseline_generation.get(tank_id, 0),
-                    config_generation=self.revisions.active().generation,
                     now=self.clock.now(),
                     policy=policy,
                 )

@@ -10,8 +10,6 @@ from tankfarm.valve.model import Valve
 from tankfarm.valve.registry import ValveRegistry
 from tankfarm.versioning.expiry import ExpiryPolicy
 from tankfarm.versioning.generation import (
-    CONFIG_KEY,
-    SCOPE_CONFIG,
     SCOPE_VALVE_PERSIST,
     GenerationRegistry,
 )
@@ -50,12 +48,10 @@ class ValvePersister:
                 {"valve_id": valve.valve_id, "position": valve.position},
             )
         generation = self._generations.bump(SCOPE_VALVE_PERSIST, PERSIST_KEY, now)
-        config_generation = self._generations.current(SCOPE_CONFIG, CONFIG_KEY)
         sheet = self._sheets.issue(
             SCOPE_VALVE_PERSIST,
             PERSIST_KEY,
             generation.number,
-            config_generation,
             now,
             self._policy,
         )
@@ -78,4 +74,3 @@ class ValvePersister:
 
     def unpersisted(self) -> tuple[Valve, ...]:
         return tuple(valve for valve in self._registry.all() if not valve.persisted)
-

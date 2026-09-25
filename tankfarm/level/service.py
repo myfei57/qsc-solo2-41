@@ -124,7 +124,6 @@ class LevelService:
             SCOPE_GAUGE_CONFIRM,
             tank_id,
             generation.number,
-            self._generations.current(SCOPE_CONFIG, CONFIG_KEY),
             now,
             self._sheet_policy,
         )
