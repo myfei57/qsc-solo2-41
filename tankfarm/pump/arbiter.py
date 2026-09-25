@@ -9,18 +9,18 @@ from tankfarm.valve.header import Header
 
 
 class HeaderArbiter:
-    """Keeps the last demand of every pump and writes through to the header."""
+    """Keeps the latest demand and writes through to the header."""
 
     def __init__(self, header: Header) -> None:
         self._header = header
-        self._demands: dict[str, float] = {}
         self._last_writer = ""
+        self._demand = 0.0
 
     def write(self, pump_id: str, value: float) -> float:
         if value < 0:
             raise NegativeSetpointError(value)
-        self._demands[pump_id] = float(value)
         self._last_writer = pump_id
+        self._demand = float(value)
         return self._header.write(value)
 
     def value(self) -> float:
@@ -30,7 +30,9 @@ class HeaderArbiter:
         return self._last_writer
 
     def demands(self) -> dict[str, float]:
-        return dict(self._demands)
+        if not self._last_writer:
+            return {}
+        return {self._last_writer: self._demand}
 
     def as_payload(self) -> dict[str, Any]:
         return {
